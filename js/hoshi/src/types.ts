@@ -2,6 +2,15 @@
  * This module provides a way to describe JSON-encodeable data-types.
  */
 
+export interface Schema {
+    t: Type,
+    meta: SchemaMetaData,
+}
+
+
+export type Version = string
+export type Encoding = "json"
+
 /**
  * Any representable type
  */
@@ -12,29 +21,29 @@ export type Type = TBasic | TLiteral | TUnion | TStruct | TMap
  */
 type TBasic = TVoid | TNull | TBool | TInt | TFloat | TString
 
-interface TVoid   { _t: "type-basic", name: "void",   _meta?: MetaData }
-interface TNull   { _t: "type-basic", name: "null",   _meta?: MetaData }
-interface TBool   { _t: "type-basic", name: "bool",   _meta?: MetaData }
-interface TInt    { _t: "type-basic", name: "int",    _meta?: MetaData }
-interface TFloat  { _t: "type-basic", name: "float",  _meta?: MetaData }
-interface TString { _t: "type-basic", name: "string", _meta?: MetaData }
+interface TVoid   { kind: "type-basic", sub: "void",   meta?: MetaData }
+interface TNull   { kind: "type-basic", sub: "null",   meta?: MetaData }
+interface TBool   { kind: "type-basic", sub: "bool",   meta?: MetaData }
+interface TInt    { kind: "type-basic", sub: "int",    meta?: MetaData }
+interface TFloat  { kind: "type-basic", sub: "float",  meta?: MetaData }
+interface TString { kind: "type-basic", sub: "string", meta?: MetaData }
 
 /**
  * A "literal" type - its only inhabitant is the given value.
  */
 interface TLiteral {
-    _t: "type-literal",
+    kind: "type-literal",
     value: any,
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 /**
  * A value is of the union type if it is of any of the `alts` types.
  */
 interface TUnion {
-    _t: "type-union",
+    kind: "type-union",
     alts: Type[],
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 /**
@@ -44,39 +53,39 @@ interface TUnion {
  * In type/javascript non-string keys should be represented as JSON.
  */
 interface TMap {
-    _t: "type-map",
+    kind: "type-map",
     key: Type,
     value: Type,
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 /**
  * The List type represents a list of values that have the `value` type.
  */
 interface TList {
-    _t: "type-list",
+    kind: "type-list",
     value: Type,
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 /**
- * The Struct type represents a Struct with a fixed set of named fields.
+ * The Struct type represents a Struct with a fixed set of subd fields.
  */
 interface TStruct {
-    _t: "type-struct",
+    kind: "type-struct",
     fields: StructFields,
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 /**
  * The Tuple type represents a tuple with a fixed set of fields.
  * Fields are identified only by their order, as opposed to [[Struct]],
- * where they are identified by name.
+ * where they are identified by sub.
  */
 interface TTuple {
-    _t: "type-tuple",
+    kind: "type-tuple",
     fields: TupleFields,
-    _meta?: MetaData,
+    meta?: MetaData,
 }
 
 interface TupleFields {
@@ -96,17 +105,22 @@ interface MetaData {
     [key: string]: number | string | boolean | null | MetaData
 }
 
+interface SchemaMetaData extends MetaData {
+    version: Version,
+    encoding: Encoding,
+}
+
 export function is_void(t: Type): t is TVoid {
-    return t._t == 'type-basic' && t.name == 'void'
+    return t.kind == 'type-basic' && t.sub == 'void'
 }
 
 /**
  * Check if a Javascript value conforms to the given type
  */
 export function typecheck(x: any, t: Type): boolean {
-    switch(t._t) {
+    switch(t.kind) {
         case "type-basic": {
-            switch(t.name) {
+            switch(t.sub) {
                 case "void":   return false;
                 case "null":   return (x == null);
                 case "bool":   return (typeof x == "boolean");
