@@ -112,10 +112,14 @@ type MetaData = Data
 /**
  * `Data` represents any JSON-like data structure
  */
-type Data = number | string | boolean | null | DataMap | Array<Data>
+type Data = number | string | boolean | null | DataMap | DataList
 
 interface DataMap {
     [key: string]: Data
+}
+
+interface DataList {
+    [idx: number]: Data
 }
 
 export function is_void(t: Type): t is TVoid {
@@ -123,49 +127,59 @@ export function is_void(t: Type): t is TVoid {
 }
 
 export function encode(x: Data, s: Schema): string | TypeError {
-    let err = (text: string) => {
-        term: x,
-        type: s.t,
-        error: text,
+    let fail = (text: string) => {
+        return {
+            term: x,
+            type: s.t,
+            error: text,
+        }
     }
 
-    if s.version != "0" {
-        return err("unknown schema version");
+    if (s.version != "0") {
+        return fail("unknown schema version");
     }
 
     switch(s.encoding) {
         case "json":
             let err = typecheck(x, s.t)
-            if err != "ok" {
+            if (err != "ok") {
                 return err
             }
             return JSON.stringify(x);
         default:
-            return err("unknown schema encoding");
+            return fail("unknown schema encoding");
     }
 }
 
-export function decode(data: string, s: Schema): { term: Data } | TypeError {
-    let err = (text: string) => {
-        data: data,
-        type: s.t,
-        error: text,
+export function decode(data: string, s: Schema): { term: Data } | TypeError  {
+    let fail = (text: string) => {
+        return {
+            term: null,
+            type: s.t,
+            error: text,
+        }
     }
 
-    if s.version != "0" {
-        return err("unknown schema version");
+    if (s.version != "0") {
+        return fail("unknown schema version");
     }
 
     switch(s.encoding) {
         case "json":
-            let x = JSON.parse(data)
+            let x = undefined
+            try {
+                x = JSON.parse(data)
+            } catch(e) {
+                return fail("invalid JSON")
+            }
+
             let err = typecheck(x, s.t)
-            if err != "ok" {
+            if (err != "ok") {
                 return err
             }
-            return JSON.stringify(x);
+            return { term: x }
         default:
-            return err("unknown schema encoding");
+            return fail("unknown schema encoding");
     }
 }
 
@@ -174,12 +188,13 @@ export function decode(data: string, s: Schema): { term: Data } | TypeError {
  */
 export function typecheck(x: Data, t: Type): Ok | TypeError {
     let check = (ok: boolean) => {
-        if ok {
+        if (ok) {
             return "ok"
         }
         return {
             error: "cannot coerce term into type",
-            type: t
+            type: t,
+            term: x
         }
     }
 
