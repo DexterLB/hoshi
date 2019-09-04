@@ -2,14 +2,20 @@
  * This module provides a way to describe JSON-encodeable data-types.
  */
 
+
+/**
+ * `Schema` represents a single encoded data format. This is the main concept
+ * of this module.
+ */
 export interface Schema {
     t: Type,
-    meta: SchemaMetaData,
+    version: Version,
+    encoding: Encoding,
+    meta: MetaData,
 }
 
-
 export type Version = string
-export type Encoding = "json"
+export type Encoding = "json" // currently "json" is the only valid encoding
 
 /**
  * Any representable type
@@ -97,17 +103,19 @@ interface StructFields {
 }
 
 /**
- * MetaData is a key-value dictionary of additional data that may be attached
+ * `MetaData` is a key-value dictionary of additional data that may be attached
  * to a type. For example, metadata may contain min/max values for a numeric
  * type, UI hints etc.
  */
-interface MetaData {
-    [key: string]: number | string | boolean | null | MetaData
-}
+type MetaData = Data
 
-interface SchemaMetaData extends MetaData {
-    version: Version,
-    encoding: Encoding,
+/**
+ * `Data` represents any JSON-like data structure
+ */
+type Data = number | string | boolean | null | DataMap | Array<Data>
+
+interface DataMap {
+    [key: string]: Data
 }
 
 export function is_void(t: Type): t is TVoid {
@@ -117,7 +125,19 @@ export function is_void(t: Type): t is TVoid {
 /**
  * Check if a Javascript value conforms to the given type
  */
-export function typecheck(x: any, t: Type): boolean {
+export function encode(x: Data, s: Schema): string {
+    switch(s.encoding) {
+        case "json":
+            typecheck(x, 
+    }
+}
+
+function 
+
+/**
+ * Check if a Javascript value conforms to the given type
+ */
+export function typecheck(x: Data, t: Type): boolean {
     switch(t.kind) {
         case "type-basic": {
             switch(t.sub) {
@@ -144,4 +164,12 @@ export function typecheck(x: any, t: Type): boolean {
     }
     console.log('please finish the implementation of typecheck')
     return true
+}
+
+export interface EncodeError extends Error {
+     
+}
+
+export interface Error {
+    text: string
 }
