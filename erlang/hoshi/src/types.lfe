@@ -1,9 +1,10 @@
 (defmodule hoshi
     (export
         (typecheck 2)
+        (setmeta 2)
     )
     (export-macro tvoid tnull tbool tint tfloat tstring
-                  tliteral tunion tmap tlist tstruct)
+                  tliteral tunion tmap tlist tstruct mvoid)
 )
 
 (defrecord typeerror
@@ -13,6 +14,8 @@
 )
 
 (defun setmeta (type meta) (map-set type #"_meta" meta))
+
+(defmacro mvoid (meta) (setmeta (tvoid) meta))
 
 (defmacro tvoid   () `(map #"_t" #"type-basic" #"name" #"void"))
 (defmacro tnull   () `(map #"_t" #"type-basic" #"name" #"null"))
