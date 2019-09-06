@@ -126,60 +126,52 @@ export function is_void(t: Type): t is TVoid {
     return t.kind == 'type-basic' && t.sub == 'void'
 }
 
-export function encode(x: Data, s: Schema): string | TypeError {
-    let fail = (text: string) => {
-        return {
-            term: x,
-            type: s.t,
-            error: text,
-        }
-    }
+type Encoder = (x: Data) => string | TypeError
 
+export function encode(s: Schema): Encoder | Error {
     if (s.version != "0") {
-        return fail("unknown schema version");
+        return { error: "unknown schema version" };
     }
 
     switch(s.encoding) {
         case "json":
-            let err = typecheck(x, s.t)
-            if (err != "ok") {
-                return err
+            return (x: Data) => {
+                let err = typecheck(x, s.t)
+                if (err != "ok") {
+                    return err
+                }
+                return JSON.stringify(x);
             }
-            return JSON.stringify(x);
         default:
-            return fail("unknown schema encoding");
+            return { error: "unknown schema encoding" };
     }
 }
 
-export function decode(data: string, s: Schema): { term: Data } | TypeError  {
-    let fail = (text: string) => {
-        return {
-            term: null,
-            type: s.t,
-            error: text,
-        }
-    }
+type Decoder = (data: string) => { term: Data } | TypeError | DecodeError
 
+export function decode(s: Schema): Decoder | Error  {
     if (s.version != "0") {
-        return fail("unknown schema version");
+        return { error: "unknown schema version" };
     }
 
     switch(s.encoding) {
         case "json":
-            let x = undefined
-            try {
-                x = JSON.parse(data)
-            } catch(e) {
-                return fail("invalid JSON")
-            }
+            return (data: string) => {
+                let x = undefined
+                try {
+                    x = JSON.parse(data)
+                } catch(e) {
+                    return { error: "invalid JSON", data: data }
+                }
 
-            let err = typecheck(x, s.t)
-            if (err != "ok") {
-                return err
+                let err = typecheck(x, s.t)
+                if (err != "ok") {
+                    return err
+                }
+                return { term: x }
             }
-            return { term: x }
         default:
-            return fail("unknown schema encoding");
+            return { error: "unknown schema encoding" };
     }
 }
 
@@ -199,7 +191,7 @@ export function typecheck(x: Data, t: Type): Ok | TypeError {
     }
 
     switch(t.kind) {
-        case "type-basic": {
+         case "type-basic": {
             switch(t.sub) {
                 case "void":   return check(false);
                 case "null":   return check(x == null);
@@ -228,8 +220,15 @@ export function typecheck(x: Data, t: Type): Ok | TypeError {
 
 type Ok = "ok"
 
-export interface TypeError {
+export interface Error {
     error: string
+}
+
+export interface DecodeError extends Error {
+    data: string
+}
+
+export interface TypeError extends Error {
     type: Type
     term: Data | null
 }
