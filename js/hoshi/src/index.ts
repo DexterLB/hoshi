@@ -112,7 +112,7 @@ type MetaData = Data
 /**
  * `Data` represents any JSON-like data structure
  */
-type Data = number | string | boolean | null | DataMap | DataList
+export type Data = number | string | boolean | null | DataMap | DataList
 
 interface DataMap {
     [key: string]: Data
@@ -126,9 +126,9 @@ export function is_void(t: Type): t is TVoid {
     return t.kind == 'type-basic' && t.sub == 'void'
 }
 
-type Encoder = (x: Data) => string | TypeError
+export type Encoder = (x: Data) => string | TypeErr
 
-export function encode(s: Schema): Encoder | Error {
+export function encoder(s: Schema): Encoder | Err {
     if (s.version != "0") {
         return { error: "unknown schema version" };
     }
@@ -147,9 +147,9 @@ export function encode(s: Schema): Encoder | Error {
     }
 }
 
-type Decoder = (data: string) => { term: Data } | TypeError | DecodeError
+export type Decoder = (data: string) => { term: Data } | TypeErr | DecodeErr
 
-export function decode(s: Schema): Decoder | Error  {
+export function decoder(s: Schema): Decoder | Err  {
     if (s.version != "0") {
         return { error: "unknown schema version" };
     }
@@ -178,7 +178,7 @@ export function decode(s: Schema): Decoder | Error  {
 /**
  * Check if a Javascript value conforms to the given type
  */
-export function typecheck(x: Data, t: Type): Ok | TypeError {
+export function typecheck(x: Data, t: Type): Ok | TypeErr {
     let check = (ok: boolean) => {
         if (ok) {
             return "ok"
@@ -220,15 +220,28 @@ export function typecheck(x: Data, t: Type): Ok | TypeError {
 
 type Ok = "ok"
 
-export interface Error {
+export interface Err {
     error: string
 }
 
-export interface DecodeError extends Error {
+export interface DecodeErr extends Err {
     data: string
 }
 
-export interface TypeError extends Error {
+export interface TypeErr extends Err {
     type: Type
     term: Data | null
+}
+
+export function is_err(x: any): x is Err {
+    return (typeof x == 'object') && ('error' in x)
+}
+
+export function json(t: Type): Schema {
+    return {
+        version: "0",
+        encoding: "json",
+        t: t,
+        meta: {},
+    }
 }
