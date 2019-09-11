@@ -1,0 +1,22 @@
+{
+  "name": "hoshi",
+  "version": "0.0.1-1",
+  "description": "Library for defining schemas and data types",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DexterLB/hoshi"
+  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "docs": "typedoc --excludePrivate --out docs src/"
+  },
+  "author": "dexterlb",
+  "license": "MIT",
+  "devDependencies": {
+    "typedoc": "^0.15.0",
+    "typescript": "^3.6.2"
+  }
+}
