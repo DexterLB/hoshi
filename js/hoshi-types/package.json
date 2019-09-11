@@ -1,5 +1,5 @@
 {
-  "name": "hoshi",
+  "name": "hoshi-types",
   "version": "0.0.1-1",
   "description": "Library for defining schemas and data types",
   "repository": {
