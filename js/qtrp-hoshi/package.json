@@ -1,5 +1,5 @@
 {
-  "name": "hoshi-types",
+  "name": "qtrp-hoshi",
   "version": "0.0.1-1",
   "description": "Library for defining schemas and data types",
   "repository": {
@@ -11,7 +11,8 @@
   "scripts": {
     "build": "tsc",
     "test": "echo \"Error: no test specified\" && exit 1",
-    "docs": "typedoc --excludePrivate --out docs src/"
+    "docs": "typedoc --excludePrivate --out docs src/",
+    "prepare": "npm run build && npm run docs"
   },
   "author": "dexterlb",
   "license": "MIT",
