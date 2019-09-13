@@ -3,6 +3,22 @@ A data serialisation library.
 
 Work in progress.
 
+### Representing schemas
+A schema describes the content of a single unit (message).
+
+It looks like this:
+
+    {
+        "version": <version>,
+        "encoding": <encoding>,
+        "meta": <metadata>
+    }
+
+`<metadata>` is a JSON object which may carry arbitrary data.
+
+For now, the only valid `<version>` is `"0"` and the only valid `<encoding>`
+is `"json"`. More encodings may be added in the future.
+
 ### Representing data types
 
 | Datum           | JSON                              |
