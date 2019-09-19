@@ -2,9 +2,10 @@
     (export
         (typecheck 2)
         (setmeta 2)
+        (tvoid 0)    (tnull 0)  (tbool 0) (tint 0)  (tfloat 0)  (tstring 0)
+        (tliteral 1) (tunion 1) (tmap 2)  (tlist 1) (tstruct 1)
     )
-    (export-macro tvoid tnull tbool tint tfloat tstring
-                  tliteral tunion tmap tlist tstruct mvoid)
+    (export-macro mvoid)
 )
 
 (defrecord typeerror
@@ -15,22 +16,32 @@
 
 (defun setmeta (type meta) (map-set type #"_meta" meta))
 
-(defmacro mvoid (meta) (setmeta (tvoid) meta))
+(eval-when-compile
+    (defun setmeta2 (type meta) (map-set type #"_meta" meta))
+    (defun make-map
+        (( (list) ) (map))
+        (( items  ) (map-set (make-map (cdr items)) (caar items) (cadar items)))
+    )
+    (defun tvoid2   () (map #"kind" #"type-basic" #"sub" #"void"))
+)
 
-(defmacro tvoid   () `(map #"_t" #"type-basic" #"name" #"void"))
-(defmacro tnull   () `(map #"_t" #"type-basic" #"name" #"null"))
-(defmacro tbool   () `(map #"_t" #"type-basic" #"name" #"bool"))
-(defmacro tint    () `(map #"_t" #"type-basic" #"name" #"int"))
-(defmacro tfloat  () `(map #"_t" #"type-basic" #"name" #"float"))
-(defmacro tstring () `(map #"_t" #"type-basic" #"name" #"string"))
+(defmacro mvoid meta `,(setmeta2 (tvoid2) (make-map meta)))
 
-(defmacro tliteral (val)    `(map #"_t" #"type-literal" #"value"  ,val))
-(defmacro tunion   (alts)   `(map #"_t" #"type-union"   #"alts"   ,alts))
-(defmacro tmap     (k v)    `(map #"_t" #"type-map"     #"key"    ,k     #"value" ,v))
-(defmacro tlist    (v)      `(map #"_t" #"type-list"    #"value"  ,v))
-(defmacro tstruct  fields   `(map #"_t" #"type-struct"  #"fields" (eval (cons map ,fields))))
+(defun tvoid   () (map #"kind" #"type-basic" #"sub" #"void"))
+(defun tnull   () (map #"kind" #"type-basic" #"sub" #"null"))
+(defun tbool   () (map #"kind" #"type-basic" #"sub" #"bool"))
+(defun tint    () (map #"kind" #"type-basic" #"sub" #"int"))
+(defun tfloat  () (map #"kind" #"type-basic" #"sub" #"float"))
+(defun tstring () (map #"kind" #"type-basic" #"sub" #"string"))
+
+(defun tliteral (val)    (map #"kind" #"type-literal" #"value"  val))
+(defun tunion   (alts)   (map #"kind" #"type-union"   #"alts"   alts))
+(defun tmap     (k v)    (map #"kind" #"type-map"     #"key"    k     #"value" v))
+(defun tlist    (v)      (map #"kind" #"type-list"    #"value"  v))
+(defun tstruct  (fields) (map #"kind" #"type-struct"  #"fields" (eval (cons 'map fields))))
 
 (defun typecheck
+    (((mvoid (1 2)) x) (make-typeerror type #"bla" value x))
     (((tvoid) x) (make-typeerror type #"bla" value x))
     ((x y) #"wtf!")
 )
