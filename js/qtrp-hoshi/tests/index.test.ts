@@ -10,6 +10,10 @@ describe('universe', () => {
 
 describe('typeType', () => {
   it('describes itself', () => {
-    expect(hoshi.typecheck(hoshi.type_as_data(hoshi.typeType), hoshi.typeType)).to.be.equal("ok")
+    let result = hoshi.typecheck(hoshi.type_as_data(hoshi.typeType), hoshi.typeType)
+    if (result != "ok") {
+      console.log(result)
+    }
+    expect(result).to.be.equal("ok")
   });
 })

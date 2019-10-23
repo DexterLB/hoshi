@@ -379,12 +379,76 @@ export function json(t: Type): Schema {
     }
 }
 
-export const typeType: Type = {
-    kind: "type-let",
-    bindings: {
+export const typeType: TLet = tlet(
+    {
+        "type": tunion([
+            tref("basic"),
+            tref("literal"),
+            tref("union"),
+            tref("struct"),
+            tref("map"),
+            tref("list"),
+            tref("tuple"),
+            tref("let"),
+            tref("ref"),
+        ]),
+        "basic": tstruct({
+            kind: tliteral("type-basic"),
+            sub: tunion([
+                tliteral("void"),
+                tliteral("null"),
+                tliteral("bool"),
+                tliteral("int"),
+                tliteral("float"),
+                tliteral("string"),
+            ]),
+            meta: tref("maybe-data"),
+        }),
+        "literal": tstruct({
+            kind: tliteral("type-literal"),
+            value: tref("data"),
+            meta: tref("maybe-data"),
+        }),
+        "union": tstruct({
+            kind: tliteral("type-union"),
+            alts: tlist(tref("type")),
+            meta: tref("maybe-data"),
+        }),
+        "struct": tstruct({
+            kind: tliteral("type-struct"),
+            fields: tmap(tstring(), tref("type")),
+            meta: tref("maybe-data"),
+        }),
+        "tuple": tstruct({
+            kind: tliteral("type-tuple"),
+            fields: tlist(tref("type")),
+            meta: tref("maybe-data"),
+        }),
+        "map": tstruct({
+            kind: tliteral("type-map"),
+            key: tref("type"),
+            value: tref("type"),
+            meta: tref("maybe-data"),
+        }),
+        "list": tstruct({
+            kind: tliteral("type-list"),
+            value: tref("type"),
+            meta: tref("maybe-data"),
+        }),
+        "let": tstruct({
+            bindings: tmap(tstring(), tref("type")),
+            t: tref("type"),
+            meta: tref("maybe-data"),
+        }),
+        "ref": tstruct({
+            name: tstring(),
+            meta: tref("maybe-data"),
+        }),
+
+        "maybe-data": tunion([tref("data"), tvoid()]),
     },
-    t: { kind: "type-ref", name: "type" }
-}
+    tref("type"),
+)
 
 export function type_as_data(t: Type): Data {
     return (t as unknown) as Data // fixme
