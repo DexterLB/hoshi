@@ -2,6 +2,118 @@
  * This module provides a way to describe JSON-encodeable data-types.
  */
 
+// -------- sugar functions ---------
+
+export function tvoid(meta?: MetaData): TVoid {
+    return metify<TVoid>(
+        { kind: "type-basic", sub: "void" },
+        meta,
+    )
+}
+
+export function tnull(meta?: MetaData): TNull {
+    return metify<TNull>(
+        { kind: "type-basic", sub: "null" },
+        meta,
+    )
+}
+
+export function tbool(meta?: MetaData): TBool {
+    return metify<TBool>(
+        { kind: "type-basic", sub: "bool" },
+        meta,
+    )
+}
+
+export function tint(meta?: MetaData): TInt {
+    return metify<TInt>(
+        { kind: "type-basic", sub: "int" },
+        meta,
+    )
+}
+
+export function tfloat(meta?: MetaData): TFloat {
+    return metify<TFloat>(
+        { kind: "type-basic", sub: "float" },
+        meta,
+    )
+}
+
+export function tstring(meta?: MetaData): TString {
+    return metify<TString>(
+        { kind: "type-basic", sub: "string" },
+        meta,
+    )
+}
+
+export function ttuple(fields: TupleFields, meta?: MetaData): TTuple {
+    return metify<TTuple>(
+        { kind: "type-tuple", fields: fields },
+        meta,
+    )
+}
+
+export function tstruct(fields: StructFields, meta?: MetaData): TStruct {
+    return metify<TStruct>(
+        { kind: "type-struct", fields: fields },
+        meta,
+    )
+}
+
+export function tliteral(value: Data, meta?: MetaData): TLiteral {
+    return metify<TLiteral>(
+        { kind: "type-literal", value: value },
+        meta,
+    )
+}
+
+export function tunion(alts: Array<Type>, meta?: MetaData): TUnion {
+    return metify<TUnion>(
+        { kind: "type-union", alts: alts },
+        meta,
+    )
+}
+
+export function tmap(key: Type, value: Type, meta?: MetaData): TMap {
+    return metify<TMap>(
+        { kind: "type-map", key: key, value: value },
+        meta,
+    )
+}
+
+export function tlist(value: Type, meta?: MetaData): TList {
+    return metify<TList>(
+        { kind: "type-list", value: value },
+        meta,
+    )
+}
+
+export function tlet(bindings: Bindings, t: Type, meta?: MetaData): TLet {
+    return metify<TLet>(
+        { kind: "type-let", bindings: bindings, t: t },
+        meta,
+    )
+}
+
+export function tref(name: string, meta?: MetaData): TRef {
+    return metify<TRef>(
+        { kind: "type-ref", name: name },
+        meta,
+    )
+}
+
+function metify<T extends MaybeHasMeta>(x: T, m: MetaData | undefined): T {
+    if (m != undefined) {
+        x.meta = m
+    }
+    return x
+}
+
+interface MaybeHasMeta {
+    meta?: MetaData
+}
+
+// -------- type definitions ---------
 
 /**
  * `Schema` represents a single encoded data format. This is the main concept
@@ -20,7 +132,7 @@ export type Encoding = "json" // currently "json" is the only valid encoding
 /**
  * Any representable type
  */
-export type Type = TBasic | TLiteral | TUnion | TStruct | TMap
+export type Type = TBasic | TLiteral | TUnion | TStruct | TMap | TList | TTuple | TLet | TRef
 
 /**
  * Any basic type
@@ -39,7 +151,7 @@ interface TString { kind: "type-basic", sub: "string", meta?: MetaData }
  */
 interface TLiteral {
     kind: "type-literal",
-    value: any,
+    value: Data,
     meta?: MetaData,
 }
 
@@ -75,7 +187,7 @@ interface TList {
 }
 
 /**
- * The Struct type represents a Struct with a fixed set of subd fields.
+ * The Struct type represents a Struct with a fixed set of fields.
  */
 interface TStruct {
     kind: "type-struct",
@@ -100,6 +212,23 @@ interface TupleFields {
 
 interface StructFields {
     [key: string]: Type;
+}
+
+interface TLet {
+    kind: "type-let",
+    bindings: Bindings,
+    t: Type,
+    meta?: MetaData,
+}
+
+interface Bindings {
+    [key: string]: Type;
+}
+
+interface TRef {
+    kind: "type-ref",
+    name: string,
+    meta?: MetaData,
 }
 
 /**
@@ -149,6 +278,10 @@ export function encoder(s: Schema): Encoder | Err {
 
 export type Decoder = (data: string) => { term: Data } | TypeErr | DecodeErr
 
+/*
+ * Create a decoder which decodes data conforming to the given schema
+ * into javascript values
+ */
 export function decoder(s: Schema): Decoder | Err  {
     if (s.version != "0") {
         return { error: "unknown schema version" };
@@ -215,7 +348,7 @@ export function typecheck(x: Data, t: Type): Ok | TypeErr {
         }
     }
     console.log('please finish the implementation of typecheck')
-    return check(true)
+    return check(false)
 }
 
 type Ok = "ok"
@@ -244,4 +377,15 @@ export function json(t: Type): Schema {
         t: t,
         meta: {},
     }
+}
+
+export const typeType: Type = {
+    kind: "type-let",
+    bindings: {
+    },
+    t: { kind: "type-ref", name: "type" }
+}
+
+export function type_as_data(t: Type): Data {
+    return (t as unknown) as Data // fixme
 }
