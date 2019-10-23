@@ -311,7 +311,11 @@ export function decoder(s: Schema): Decoder | Err  {
 /**
  * Check if a Javascript value conforms to the given type
  */
-export function typecheck(x: Data, t: Type): Ok | TypeErr {
+export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
+    if (bindings == undefined) {
+        bindings = {}
+    }
+
     let check = (ok: boolean) => {
         if (ok) {
             return "ok"
@@ -323,8 +327,22 @@ export function typecheck(x: Data, t: Type): Ok | TypeErr {
         }
     }
 
+    console.log('typecheck ', x, ' as ', t)
     switch(t.kind) {
-         case "type-basic": {
+        case "type-let": {
+            return typecheck(x, t.t, { ...bindings, ...t.bindings })
+        }
+        case "type-ref": {
+            if (!(t.name in bindings)) {
+                return {
+                    error: "unknown ref",
+                    ref_name: t.name,
+                    bindings: bindings,
+                }
+            }
+            return typecheck(x, bindings[t.name], bindings)
+        }
+        case "type-basic": {
             switch(t.sub) {
                 case "void":   return check(false);
                 case "null":   return check(x == null);
@@ -340,14 +358,14 @@ export function typecheck(x: Data, t: Type): Ok | TypeErr {
         }
         case "type-union": {
             for (let alt of t.alts) {
-                if (typecheck(x, alt)) {
+                if (typecheck(x, alt, bindings) == 'ok') {
                     return check(true);
                 }
             }
             return check(false);
         }
     }
-    console.log('please finish the implementation of typecheck')
+    console.log('fixme: unknown kind', t.kind)
     return check(false)
 }
 
@@ -361,9 +379,16 @@ export interface DecodeErr extends Err {
     data: string
 }
 
-export interface TypeErr extends Err {
+export type TypeErr = CoerceErr | RefErr
+
+export interface CoerceErr extends Err {
     type: Type
     term: Data | null
+}
+
+export interface RefErr extends Err {
+    ref_name: string,
+    bindings: Bindings,
 }
 
 export function is_err(x: any): x is Err {
