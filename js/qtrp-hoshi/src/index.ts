@@ -327,7 +327,6 @@ export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
         }
     }
 
-    console.log('typecheck ', x, ' as ', t)
     switch(t.kind) {
         case "type-let": {
             return typecheck(x, t.t, { ...bindings, ...t.bindings })
@@ -357,12 +356,69 @@ export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
             return check(JSON.stringify(x) == JSON.stringify(t.value));
         }
         case "type-union": {
+            let chain: Array<TypeErr> = []
             for (let alt of t.alts) {
-                if (typecheck(x, alt, bindings) == 'ok') {
+                let result = typecheck(x, alt, bindings)
+                if (result == 'ok') {
                     return check(true);
                 }
+                chain.push(result)
             }
-            return check(false);
+            return {
+                error: "value does not match any alt in union type",
+                type: t,
+                term: x,
+                chain: chain,
+            }
+        }
+        case "type-struct": {
+            if (!is_map(x)) {
+                return check(false)
+            }
+
+            for (let key of Object.keys(t.fields)) {
+                if (!(key in x)) {
+                    return check(false)
+                }
+                let result = typecheck(x[key], t.fields[key], bindings)
+                if (result != 'ok') {
+                    return result
+                }
+            }
+            return check(true)
+        }
+        case "type-map": {
+            if (!is_map(x)) {
+                return check(false)
+            }
+
+            for (let key of Object.keys(x)) {
+                let key_result = typecheck(key, t.key, bindings)
+                if (key_result != 'ok') {
+                    return key_result
+                }
+
+                let value_result = typecheck(x[key], t.value, bindings)
+                if (value_result != 'ok') {
+                    return value_result
+                }
+            }
+            return check(true)
+        }
+        case "type-list": {
+            if (!is_list(x)) {
+                return check(false)
+            }
+
+            let y = x as Array<Data>  // fixme: bug in typescript?
+
+            for (let i = 0; i < y.length; i++) {
+                let result = typecheck(y[i], t.value, bindings)
+                if (result != 'ok') {
+                    return result
+                }
+            }
+            return check(true)
         }
     }
     console.log('fixme: unknown kind', t.kind)
@@ -383,16 +439,13 @@ export type TypeErr = CoerceErr | RefErr
 
 export interface CoerceErr extends Err {
     type: Type
+    chain?: Array<TypeErr>
     term: Data | null
 }
 
 export interface RefErr extends Err {
     ref_name: string,
     bindings: Bindings,
-}
-
-export function is_err(x: any): x is Err {
-    return (typeof x == 'object') && ('error' in x)
 }
 
 export function json(t: Type): Schema {
@@ -477,4 +530,16 @@ export const typeType: TLet = tlet(
 
 export function type_as_data(t: Type): Data {
     return (t as unknown) as Data // fixme
+}
+
+export function is_err(x: any): x is Err {
+    return (typeof x == 'object') && ('error' in x)
+}
+
+function is_map(x: any): x is DataMap {
+    return (typeof x == 'object') && (x != null)
+}
+
+function is_list(x: any): x is DataList {
+    return (x instanceof Array) && (x != null)
 }

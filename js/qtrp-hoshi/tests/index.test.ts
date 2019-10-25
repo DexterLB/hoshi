@@ -1,5 +1,6 @@
 import { expect } from 'chai';
 import * as hoshi from '../src';
+import { writeFile } from 'fs';
 
 describe('universe', () => {
   it('works', () => {
@@ -27,7 +28,9 @@ describe('typeType', () => {
     debugger;
     let result = hoshi.typecheck(hoshi.type_as_data(hoshi.typeType), hoshi.typeType)
     if (result != "ok") {
-      console.log(result)
+      writeFile("/tmp/typeerr.json", JSON.stringify(result), () => {
+        console.log("dumped type error into /tmp/typeerr.json")
+      })
     }
     expect(result).to.be.equal("ok")
   })
