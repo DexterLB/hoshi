@@ -102,6 +102,10 @@ export function tref(name: string, meta?: MetaData): TRef {
     )
 }
 
+export function tmaybe(t: Type): Type {
+    return tunion([t, tvoid()])
+}
+
 function metify<T extends MaybeHasMeta>(x: T, m: MetaData | undefined): T {
     if (m != undefined) {
         x.meta = m
@@ -311,7 +315,7 @@ export function decoder(s: Schema): Decoder | Err  {
 /**
  * Check if a Javascript value conforms to the given type
  */
-export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
+export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok | TypeErr {
     if (bindings == undefined) {
         bindings = {}
     }
@@ -343,7 +347,7 @@ export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
         }
         case "type-basic": {
             switch(t.sub) {
-                case "void":   return check(false);
+                case "void":   return check(x == undefined);
                 case "null":   return check(x == null);
                 case "bool":   return check(typeof x == "boolean");
                 case "int":    return check(typeof x == "number");
@@ -377,9 +381,6 @@ export function typecheck(x: Data, t: Type, bindings?: Bindings): Ok | TypeErr {
             }
 
             for (let key of Object.keys(t.fields)) {
-                if (!(key in x)) {
-                    return check(false)
-                }
                 let result = typecheck(x[key], t.fields[key], bindings)
                 if (result != 'ok') {
                     return result
@@ -440,7 +441,7 @@ export type TypeErr = CoerceErr | RefErr
 export interface CoerceErr extends Err {
     type: Type
     chain?: Array<TypeErr>
-    term: Data | null
+    term: Data | null | undefined
 }
 
 export interface RefErr extends Err {
@@ -523,7 +524,17 @@ export const typeType: TLet = tlet(
             meta: tref("maybe-data"),
         }),
 
-        "maybe-data": tunion([tref("data"), tvoid()]),
+        "maybe-data": tmaybe(tref("data")),
+
+        "data": tunion([
+            tstring(),
+            tfloat(),
+            tint(),
+            tbool(),
+            tnull(),
+            tmap(tstring(), tref("data")),
+            tlist(tref("data")),
+        ]),
     },
     tref("type"),
 )
@@ -542,4 +553,8 @@ function is_map(x: any): x is DataMap {
 
 function is_list(x: any): x is DataList {
     return (x instanceof Array) && (x != null)
+}
+
+function voidable(t: Type, bindings: Bindings): boolean {
+    return typecheck(undefined, t, bindings) == 'ok'
 }
