@@ -426,6 +426,8 @@ export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok
     return check(false)
 }
 
+// TODO: document those
+
 type Ok = "ok"
 
 export interface Err {
@@ -449,14 +451,27 @@ export interface RefErr extends Err {
     bindings: Bindings,
 }
 
-export function json(t: Type): Schema {
+export function json(t: Type, meta?: MetaData): Schema {
+    if (!meta) {
+        meta = {}
+    }
     return {
         version: "0",
         encoding: "json",
         t: t,
-        meta: {},
+        meta: meta,
     }
 }
+
+export const dataType = tunion([
+    tstring(),
+    tfloat(),
+    tint(),
+    tbool(),
+    tnull(),
+    tmap(tstring(), tref("data")),
+    tlist(tref("data")),
+])
 
 export const typeType: TLet = tlet(
     {
@@ -526,18 +541,22 @@ export const typeType: TLet = tlet(
 
         "maybe-data": tmaybe(tref("data")),
 
-        "data": tunion([
-            tstring(),
-            tfloat(),
-            tint(),
-            tbool(),
-            tnull(),
-            tmap(tstring(), tref("data")),
-            tlist(tref("data")),
-        ]),
+        "data": dataType,
     },
     tref("type"),
 )
+
+export const schemaType: Type = tstruct({
+    t: typeType,
+    version: tunion([tliteral("0")]),
+    encoding: tunion([tliteral("json")]),
+    meta: dataType,
+})
+
+export function jsonSchema(meta?: MetaData): Schema {
+    return json(schemaType, meta)
+}
+
 
 export function type_as_data(t: Type): Data {
     return (t as unknown) as Data // fixme
