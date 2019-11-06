@@ -191,7 +191,7 @@ export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok
 
 // TODO: document those
 
-type Ok = "ok"
+export type Ok = "ok"
 
 export interface Err {
     error: string
