@@ -10,5 +10,9 @@
     "module": "commonjs",
     "target": "es2018",
     "jsx": "react"
-  }
+  },
+  "include": [
+    "src/**/*",
+    "src/*"
+  ]
 }
