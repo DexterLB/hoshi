@@ -121,3 +121,23 @@ interface MaybeHasMeta {
     meta?: MetaData
 }
 
+export function json(t: Type, meta?: MetaData): Schema {
+    if (!meta) {
+        meta = {}
+    }
+    return {
+        version: "0",
+        encoding: "json",
+        t: t,
+        meta: meta,
+    }
+}
+
+
+export function is_map(x: any): x is DataMap {
+    return (typeof x == 'object') && (x != null)
+}
+
+export function is_list(x: any): x is DataList {
+    return (x instanceof Array) && (x != null)
+}
