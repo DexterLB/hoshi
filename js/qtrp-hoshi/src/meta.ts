@@ -11,15 +11,20 @@ import {
     tbool, tint, tnull, tfloat, is_map, is_list, json
 } from './sugar'
 
-export const dataType = tunion([
-    tstring(),
-    tfloat(),
-    tint(),
-    tbool(),
-    tnull(),
-    tmap(tstring(), tref("data")),
-    tlist(tref("data")),
-])
+export const dataType = tlet(
+    {
+        "data": tunion([
+            tstring(),
+            tfloat(),
+            tint(),
+            tbool(),
+            tnull(),
+            tmap(tstring(), tref("data")),
+            tlist(tref("data")),
+        ])
+    },
+    tref("data"),
+)
 
 export const typeType: TLet = tlet(
     {
@@ -89,7 +94,7 @@ export const typeType: TLet = tlet(
 
         "maybe-data": tmaybe(tref("data")),
 
-        "data": dataType,
+        "data": dataType.bindings['data'],
     },
     tref("type"),
 )
