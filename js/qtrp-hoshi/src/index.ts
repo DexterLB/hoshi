@@ -110,8 +110,8 @@ export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok
         }
         case "type-basic": {
             switch(t.sub) {
-                case "void":   return check(x == undefined);
-                case "null":   return check(x == null);
+                case "void":   return check(x === undefined);
+                case "null":   return check(x === null);
                 case "bool":   return check(typeof x == "boolean");
                 case "int":    return check(typeof x == "number");
                 case "float":  return check(typeof x == "number");
