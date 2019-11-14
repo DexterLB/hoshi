@@ -151,6 +151,25 @@ export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok
             }
             return check(true)
         }
+        case "type-tuple": {
+            if (!is_list(x)) {
+                return check(false)
+            }
+            let y = x as Array<Data>
+            let fields = t.fields as Array<Type>
+
+            if (y.length != fields.length) {
+                return check(false)
+            }
+
+            for (let i = 0; i < fields.length; i++) {
+                let result = typecheck(y[i], fields[i], bindings)
+                if (result != 'ok') {
+                    return result
+                }
+            }
+            return check(true)
+        }
         case "type-map": {
             if (!is_map(x)) {
                 return check(false)
@@ -185,7 +204,6 @@ export function typecheck(x: Data | undefined, t: Type, bindings?: Bindings): Ok
             return check(true)
         }
     }
-    console.log('fixme: unknown kind', t.kind)
     return check(false)
 }
 
